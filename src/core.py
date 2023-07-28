@@ -5,9 +5,20 @@ from datetime import datetime
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from requests.exceptions import RequestException
+from tenacity import retry
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_random
 
 
+from const import MAX_RETRIES, MAX_WAIT_BETWEEN_REQ, MIN_WAIT_BETWEEN_REQ
 
+@retry(
+        wait=wait_random(min=MIN_WAIT_BETWEEN_REQ, max=MAX_WAIT_BETWEEN_REQ),
+        stop=stop_after_attempt(MAX_RETRIES),
+        retry=retry_if_exception_type(RequestException),        
+)
 
 def parse_html_as_soup(url: str) -> BeautifulSoup:
     resp = requests.get(url)
