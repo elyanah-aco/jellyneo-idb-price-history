@@ -12,7 +12,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
 
 
-from const import MAX_RETRIES, MAX_WAIT_BETWEEN_REQ, MIN_WAIT_BETWEEN_REQ
+from const import MAX_RETRIES, MAX_WAIT_BETWEEN_REQ, MIN_WAIT_BETWEEN_REQ, IDB_URL_TEMPLATE
 
 @retry(
         wait=wait_random(min=MIN_WAIT_BETWEEN_REQ, max=MAX_WAIT_BETWEEN_REQ),
@@ -26,9 +26,11 @@ def parse_html_as_soup(url: str) -> BeautifulSoup:
     soup = BeautifulSoup(resp.text, "lxml")
     return soup
 
-def get_price_history(url: str) -> pd.DataFrame:
-    soup = parse_html_as_soup(url)
-    price_history = soup.find("div", {"class": "pricing-row-container"}).findAll("div", {"class": "price-row"})
+def get_item_name(item_soup: BeautifulSoup) -> str:
+    return item_soup.find("h1").text
+
+def get_price_history(item_soup: BeautifulSoup) -> pd.DataFrame:
+    price_history = item_soup.find("div", {"class": "pricing-row-container"}).findAll("div", {"class": "price-row"})
 
     price_history_entries = {
         "date": [],
@@ -52,5 +54,13 @@ def get_price_history(url: str) -> pd.DataFrame:
     print(price_history_df)
 
 if __name__ == "__main__":
-    url = "https://items.jellyneo.net/item/2288/price-history/"
-    get_price_history(url)
+    while True:
+        item_id = input("Enter Neopets item ID:")
+        try:
+            item_id = int(item_id)
+            break
+        except ValueError:
+            print("Invalid: ID must be an integer")
+    item_url = IDB_URL_TEMPLATE.format(item_id=item_id)
+    item_soup = parse_html_as_soup(item_url)
+
