@@ -20,18 +20,10 @@ class JellyneoIDBCrawler:
     """
     Implements methods to obtain item data from Jellyneo's Item Database.
     """
-    def send_request(self) -> BeautifulSoup:
-        while True:
-            try:
-                item_id = input("Enter Neopets item ID:")
-                item_id = int(item_id)
-                item_url = IDB_URL_TEMPLATE.format(item_id=item_id)
-                item_soup = self.parse_html_as_soup(item_url)
-                return item_soup
-            except ValueError:
-                print("Invalid: ID must be an integer")
-            except MissingPriceHistoryException:
-                print("Invalid: Could not find price history. Item for ID either does not exist, or is a Neocash item.")
+    def send_request(self, item_id: str) -> BeautifulSoup:
+        item_url = IDB_URL_TEMPLATE.format(item_id=item_id)
+        item_soup = self.parse_html_as_soup(item_url)
+        return item_soup
 
     @retry(
             wait=wait_random(min=MIN_WAIT_BETWEEN_REQ, max=MAX_WAIT_BETWEEN_REQ),
@@ -109,7 +101,7 @@ class JellyneoIDBCrawler:
                 continue 
         
         price_history_df = pd.DataFrame().from_dict(price_history_entries)
-        print(price_history_df)
+        return price_history_df
 
     @staticmethod
     def check_if_inflated(item_soup: BeautifulSoup) -> tuple(str, str) | None:
